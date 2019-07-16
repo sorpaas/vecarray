@@ -7,6 +7,7 @@ extern crate alloc;
 use typenum::Unsigned;
 use core::ops::{Deref, DerefMut};
 use core::marker::PhantomData;
+use core::convert::TryFrom;
 use alloc::vec::Vec;
 #[cfg(all(feature = "serde", feature = "std"))]
 use serde::{Serialize, Deserialize};
@@ -36,6 +37,22 @@ impl<T, N: Unsigned> DerefMut for VecArray<T, N> {
     }
 }
 
+pub enum TryFromError {
+    InvalidLength,
+}
+
+impl<T, N: Unsigned> TryFrom<Vec<T>> for VecArray<T, N> {
+    type Error = TryFromError;
+
+    fn try_from(value: Vec<T>) -> Result<Self, Self::Error> {
+        if value.len() != N::to_usize() {
+            return Err(TryFromError::InvalidLength)
+        }
+
+        Ok(Self(value, PhantomData))
+    }
+}
+
 #[cfg(all(feature = "serde", feature = "std"))]
 impl<T: Serialize, N: Unsigned> Serialize for VecArray<T, N> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where
@@ -50,6 +67,11 @@ impl<'de, T: Deserialize<'de>, N: Unsigned> Deserialize<'de> for VecArray<T, N> 
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where
         D: serde::Deserializer<'de>,
     {
-        Ok(Self(Vec::<T>::deserialize(deserializer)?, PhantomData))
+        let vec = Vec::<T>::deserialize(deserializer)?;
+        if vec.len() != N::to_usize() {
+            return Err(<D::Error as serde::de::Error>::invalid_length(vec.len(), &format!("{}", N::to_usize()).as_str()))
+        }
+
+        Ok(Self(vec, PhantomData))
     }
 }
