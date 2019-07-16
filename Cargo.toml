@@ -1,0 +1,14 @@
+[package]
+name = "vecarray"
+version = "0.1.0"
+authors = ["Wei Tang <hi@that.world>"]
+edition = "2018"
+license = "Apache-2.0"
+
+[dependencies]
+typenum = "1.10"
+serde = { version = "1.0", default-features = false, optional = true }
+
+[features]
+default = ["std", "serde"]
+std = ["serde/std"]
