@@ -37,6 +37,12 @@ impl<T, N: Unsigned> DerefMut for VecArray<T, N> {
     }
 }
 
+impl<T, N: Unsigned> AsRef<[T]> for VecArray<T, N> {
+    fn as_ref(&self) -> &[T] {
+        &self.0
+    }
+}
+
 pub enum TryFromError {
     InvalidLength,
 }
