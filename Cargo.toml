@@ -3,6 +3,7 @@ name = "vecarray"
 version = "0.1.0"
 authors = ["Wei Tang <hi@that.world>"]
 edition = "2018"
+description = "Generic array backed by a vector."
 license = "Apache-2.0"
 
 [dependencies]
