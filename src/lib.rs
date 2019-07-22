@@ -9,8 +9,10 @@ use core::ops::{Deref, DerefMut};
 use core::marker::PhantomData;
 use core::convert::TryFrom;
 use alloc::vec::Vec;
-#[cfg(all(feature = "serde", feature = "std"))]
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
+#[cfg(feature = "parity-codec")]
+use parity_codec::{Encode, Decode, Input, Output};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct VecArray<T, N: Unsigned>(Vec<T>, PhantomData<N>);
@@ -59,7 +61,7 @@ impl<T, N: Unsigned> TryFrom<Vec<T>> for VecArray<T, N> {
     }
 }
 
-#[cfg(all(feature = "serde", feature = "std"))]
+#[cfg(feature = "serde")]
 impl<T: Serialize, N: Unsigned> Serialize for VecArray<T, N> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where
         S: serde::Serializer,
@@ -68,16 +70,35 @@ impl<T: Serialize, N: Unsigned> Serialize for VecArray<T, N> {
     }
 }
 
-#[cfg(all(feature = "serde", feature = "std"))]
+#[cfg(feature = "serde")]
 impl<'de, T: Deserialize<'de>, N: Unsigned> Deserialize<'de> for VecArray<T, N> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where
         D: serde::Deserializer<'de>,
     {
         let vec = Vec::<T>::deserialize(deserializer)?;
         if vec.len() != N::to_usize() {
-            return Err(<D::Error as serde::de::Error>::invalid_length(vec.len(), &format!("{}", N::to_usize()).as_str()))
+            return Err(<D::Error as serde::de::Error>::custom("invalid length"))
         }
 
         Ok(Self(vec, PhantomData))
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<T: Encode, N: Unsigned> Encode for VecArray<T, N> {
+    fn encode_to<W: Output>(&self, dest: &mut W) {
+        self.0.encode_to(dest)
+    }
+}
+
+#[cfg(feature = "parity-codec")]
+impl<T: Decode, N: Unsigned> Decode for VecArray<T, N> {
+    fn decode<I: Input>(input: &mut I) -> Option<Self> {
+        let decoded = Vec::<T>::decode(input)?;
+        if decoded.len() == N::to_usize() {
+            Some(Self(decoded, PhantomData))
+        } else {
+            None
+        }
     }
 }

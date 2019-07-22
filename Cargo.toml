@@ -8,8 +8,9 @@ license = "Apache-2.0"
 
 [dependencies]
 typenum = "1.10"
-serde = { version = "1.0", default-features = false, optional = true }
+serde = { version = "1.0", default-features = false, optional = true, features = ["alloc"] }
+parity-codec = { version = "4.0", default-features = false, optional = true }
 
 [features]
-default = ["std", "serde"]
-std = ["serde/std"]
+default = ["std"]
+std = ["serde/std", "parity-codec/std"]
