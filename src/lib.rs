@@ -11,8 +11,6 @@ use core::convert::TryFrom;
 use alloc::vec::Vec;
 #[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
-#[cfg(feature = "parity-codec")]
-use parity_codec::{Encode, Decode, Input, Output};
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct VecArray<T, N: Unsigned>(Vec<T>, PhantomData<N>);
@@ -81,24 +79,5 @@ impl<'de, T: Deserialize<'de>, N: Unsigned> Deserialize<'de> for VecArray<T, N> 
         }
 
         Ok(Self(vec, PhantomData))
-    }
-}
-
-#[cfg(feature = "parity-codec")]
-impl<T: Encode, N: Unsigned> Encode for VecArray<T, N> {
-    fn encode_to<W: Output>(&self, dest: &mut W) {
-        self.0.encode_to(dest)
-    }
-}
-
-#[cfg(feature = "parity-codec")]
-impl<T: Decode, N: Unsigned> Decode for VecArray<T, N> {
-    fn decode<I: Input>(input: &mut I) -> Option<Self> {
-        let decoded = Vec::<T>::decode(input)?;
-        if decoded.len() == N::to_usize() {
-            Some(Self(decoded, PhantomData))
-        } else {
-            None
-        }
     }
 }
